@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "554509728404",
+    "project_id": "haroof-37cd9",
+    "storage_bucket": "haroof-37cd9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554509728404:android:7f48ee6029b51ed5e25281",
+        "android_client_info": {
+          "package_name": "com.haroof"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANK3dUjFT7SKxceLvqwZPgJfXeXnkasD4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
