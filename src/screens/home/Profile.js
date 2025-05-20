@@ -16,11 +16,29 @@ import {useNavigation} from '@react-navigation/native';
 const {width, height} = Dimensions.get('window');
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import ImagePicker from 'react-native-image-crop-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 const Profile = () => {
   const navigation = useNavigation();
   const [image, setImage] = useState(null);
-  console.log('pic...........', image);
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const currentUser = auth().currentUser;
+      if (currentUser) {
+        const userDoc = await firestore()
+          .collection('Users')
+          .doc(currentUser.uid)
+          .get();
+        const userData = userDoc.data();
+        setUserData(userData);
+      }
+    };
+    fetchUserData();
+  }, []);
 
   const imagePicker = () => {
     ImagePicker.openPicker({
@@ -47,6 +65,16 @@ const Profile = () => {
         }
       })
       .catch(error => {});
+  };
+
+  const logOut = async () => {
+    try {
+      await AsyncStorage.multiRemove(['email', 'password']);
+      await AsyncStorage.setItem('logout', 'yes');
+      navigation.navigate('SignIn');
+    } catch (error) {
+    } finally {
+    }
   };
 
   return (
@@ -107,7 +135,7 @@ const Profile = () => {
                 color: COLORS.heading,
                 marginTop: 10,
               }}>
-              Sana Asghar
+              {userData?.name}
             </Text>
           </View>
           <View style={{marginTop: 28, alignSelf: 'center'}}>
@@ -133,12 +161,13 @@ const Profile = () => {
 
             <ProfileComponentTwo
               img1={require('../../assets/images/Home/userIcon.png')}
-              text1={`Sana Asghar`}
+              text1={userData?.name}
               img={require('../../assets/images/Home/right.png')}
-              email={`sanafahad6658@gmail.com`}
+              email={userData?.email}
               texting={{fontFamily: 'Roboto-Bold'}}
               clickButton={() => navigation.navigate('EditProfile')}
             />
+
             <ProfileComponentTwo
               img1={require('../../assets/images/Home/lockIcon.png')}
               text1={`Change Password`}
@@ -149,7 +178,7 @@ const Profile = () => {
             <ProfileComponentTwo
               img1={require('../../assets/images/Home/logOut.png')}
               log={`Log out`}
-              // onLogoutPress={handleLogOut}
+              onLogoutPress={logOut}
               picStyle2={{marginTop: 5}}
               styleOne={{
                 borderBottomLeftRadius: 20,

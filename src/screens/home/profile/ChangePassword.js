@@ -18,6 +18,8 @@ import PrimaryText from '../../../customcompoents/newComponents/PrimaryText';
 import Button from '../../../customcompoents/newComponents/Button';
 import InputField from '../../../customcompoents/newComponents/InputField';
 import InputFieldTitle from '../../../customcompoents/newComponents/InputFieldTitle';
+import auth from '@react-native-firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const {width} = Dimensions.get('window');
 
@@ -26,6 +28,24 @@ const ChangePassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChangePassword = async values => {
+    setLoading(true);
+    const user = auth().currentUser;
+    const credential = auth.EmailAuthProvider.credential(
+      user?.email,
+      values.oldPassword,
+    );
+    try {
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(values.password);
+      await AsyncStorage.multiRemove(['email', 'password']);
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -44,7 +64,7 @@ const ChangePassword = () => {
                 </TouchableOpacity>
                 <Text style={styles.title}>Change Password</Text>
               </View>
-              <View style={{marginTop:40}}>
+              <View style={{marginTop: 40}}>
                 <View style={styles.inputContainer}>
                   <InputFieldTitle
                     title={'Old Password'}
@@ -92,7 +112,11 @@ const ChangePassword = () => {
               </View>
 
               <View style={styles.buttonContainer}>
-                <Button title={'Save'} />
+                <Button
+                  title={'Save'}
+                  press={handleChangePassword}
+                  loading={loading}
+                />
               </View>
             </View>
           </ScrollView>

@@ -135,21 +135,24 @@
 // }
 // export default App
 
-
-import { StyleSheet } from 'react-native'
-import React from 'react'
-import StackNavigation from './src/routers/StackNavigation'
-import 'react-native-gesture-handler'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import {StyleSheet} from 'react-native';
+import React from 'react';
+import StackNavigation from './src/routers/StackNavigation';
+import 'react-native-gesture-handler';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {Provider} from 'react-redux';
+import store from './src/screens/redux/store';
 
 const App = () => {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <StackNavigation />
+    <GestureHandlerRootView style={{flex: 1}}>
+      <Provider store={store}>
+        <StackNavigation />
+      </Provider>
     </GestureHandlerRootView>
-  )
-}
+  );
+};
 
-export default App
+export default App;
 
-const styles = StyleSheet.create({})
+const styles = StyleSheet.create({});

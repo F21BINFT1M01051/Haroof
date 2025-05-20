@@ -9,29 +9,26 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
-// import {saveAuthToken} from '../../../../services/authToken';
-// import {useDispatch, useSelector} from 'react-redux';
 import InputField from '../../../customcompoents/newComponents/InputField';
 import Password from '../../../customcompoents/newComponents/Password';
 import Button from '../../../customcompoents/newComponents/Button';
 import InputFieldTitle from '../../../customcompoents/newComponents/InputFieldTitle';
 import {COLORS} from '../../../services/colors';
-// import {setFormData} from '../../../../redux/FormRedux/Actions';
-// import {apiRequest} from '../../../../services/apiServices';
 import * as yup from 'yup';
 import {Formik} from 'formik';
 import {useNavigation} from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
+import {useSelector} from 'react-redux';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const {width, height} = Dimensions.get('window');
 
 const OnBoardingTwentyThree = props => {
-  const [isAlertVisible, setAlertVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const formikRef = useRef(null);
-  const [userName, setUserName] = useState('');
-  const [emailValue, setEmailValue] = useState(false);
-  const [userNameValue, setUserNameValue] = useState(false);
+  const options = useSelector(state => state.form);
 
   const navigation = useNavigation();
   const validationSchema = yup.object({
@@ -41,24 +38,35 @@ const OnBoardingTwentyThree = props => {
     name: yup.string().required('Name is required'),
   });
 
-  const handleNext = values => {
-    if (
-      values.email &&
-      values.password &&
-      values.name &&
-      values.confirmPassword
-    ) {
-      navigation.navigate('OnBoardingTwentyFour');
+
+  const handleSignUp = async values => {
+    setLoading(true);
+    try {
+      const userCredential = await auth().createUserWithEmailAndPassword(
+        values.email,
+        values.password,
+      );
+      const user = userCredential.user;
+      let profileUrl = '';
+      const userData = {
+        name: values.name,
+        email: values.email,
+        genres: options.genreSelection,
+        uid: user.uid,
+        profile: profileUrl || null,
+        writer: false,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      };
+      await firestore().collection('Users').doc(user.uid).set(userData);
+      await AsyncStorage.setItem('email', values.email);
+      await AsyncStorage.setItem('password', values.password);
+      navigation.navigate('HomeBasic');
+    } catch (error) {
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUserName = (value, handleChange) => {
-    const regexp = /[*%#:&\s]/g;
-    if (!regexp.test(value)) {
-      handleChange('userName')(value);
-      setUserName(value);
-    }
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -106,7 +114,7 @@ const OnBoardingTwentyThree = props => {
                 confirmPassword: '',
               }}
               validationSchema={validationSchema}
-              onSubmit={values => handleNext(values)}
+              onSubmit={values => handleSignUp(values)}
               innerRef={formikRef}>
               {({
                 handleChange,

@@ -9,18 +9,38 @@ import {
   ScrollView,
   TextInput,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import ProfileSection from '../../customcompoents/newComponents/HomeScreenComponents/ProfileSection';
 import TutorCard from '../../customcompoents/newComponents/HomeScreenComponents/TutorCard';
 import {useNavigation} from '@react-navigation/native';
 import Feather from 'react-native-vector-icons/Feather';
 import {data} from '../../services/books';
 import {Old} from '../../services/oldBooks';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
-const {width, height} = Dimensions.get('window');
+const {width} = Dimensions.get('window');
+
 const HomeBasic = () => {
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const currentUser = auth().currentUser;
+      if (currentUser) {
+        const userDoc = await firestore()
+          .collection('Users')
+          .doc(currentUser.uid)
+          .get();
+        const userData = userDoc.data();
+        setUserData(userData);
+      }
+    };
+    fetchUserData();
+  }, []);
+
 
   const filteredData = data.filter(item =>
     item.title.toLowerCase().includes(search.toLowerCase()),
@@ -40,7 +60,7 @@ const HomeBasic = () => {
             notifications={true}
             // img={profileInfo?.profileData?.profileImage}
             image={require('../../assets/images/Home/Tutor.png')}
-            name={'Sana Asghar'}
+            name={userData?.name}
             textColor={{color: 'white'}}
           />
           <View style={styles.searchBar}>
@@ -60,6 +80,7 @@ const HomeBasic = () => {
             </TouchableOpacity>
           </View>
         </View>
+
         <View>
           <View
             style={{
