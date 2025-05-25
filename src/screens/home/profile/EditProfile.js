@@ -20,6 +20,7 @@ import {useNavigation} from '@react-navigation/native';
 import Button from '../../../customcompoents/newComponents/Button';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import {useSelector} from 'react-redux';
 
 const {width, height} = Dimensions.get('window');
 
@@ -29,46 +30,8 @@ const EditProfileV2 = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
-  const [email, setEmail] = useState(''); // if editable, else hardcode
-  const [uid, setUid] = useState('');
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        const userDoc = await firestore()
-          .collection('Users')
-          .doc(currentUser.uid)
-          .get();
-        const userData = userDoc.data();
-        setName(userData?.name || '');
-        setPhone(userData?.phone || '');
-        setCity(userData?.city || '');
-        setEmail(userData?.email || '');
-        setUid(currentUser.uid);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  const updateUserDetails = async () => {
-    try {
-      await firestore().collection('Users').doc(uid).update({
-        name: name,
-        phone: phone,
-        city: city,
-        email: email,
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      });
-      Alert.alert('Success', 'Profile updated successfully.');
-      setModalVisible(false);
-      navigation.goBack()
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update profile.');
-      console.error(error);
-    }
-  };
+  const [email, setEmail] = useState('');
+  const user = useSelector(state => state.form.user);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -110,7 +73,7 @@ const EditProfileV2 = () => {
           }}>
           <View style={styles.container}>
             <InputField
-              placeholder={'Sana Asghar'}
+              placeholder={user?.fullName}
               value={name}
               onChangeText={setName}
               style={{
@@ -120,7 +83,7 @@ const EditProfileV2 = () => {
               }}
             />
             <InputField
-              placeholder={'Phone Number'}
+              placeholder={`03076590664`}
               value={phone}
               onChangeText={setPhone}
               style={{
@@ -140,7 +103,7 @@ const EditProfileV2 = () => {
               }}
             />
             <InputField
-              placeholder={'sanafahad6658@gmail.com'}
+              placeholder={user?.email}
               value={email}
               onChangeText={setEmail}
               style={{
@@ -220,7 +183,6 @@ const EditProfileV2 = () => {
               }}>
               <Button
                 title={'Yes'}
-                press={updateUserDetails}
                 style={{
                   width: width * 0.35,
                   height: height * 0.052,
@@ -228,6 +190,7 @@ const EditProfileV2 = () => {
                   borderRadius: 8,
                 }}
                 textStyle={{fontFamily: 'Poppins-Bold', fontSize: 15}}
+                press={() => setModalVisible(false)}
               />
               <Button
                 title={'Cancel'}

@@ -6,58 +6,28 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {COLORS} from '../../services/colors';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import Fontisto from 'react-native-vector-icons/Fontisto';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {BASE_URL} from '../../services/baseUrls';
 
-const writings = [
-  {
-    id: 1,
-    category: 'Recent Writings',
-    books: [
-      {
-        id: 1,
-        cover: require('../../assets/images/Home/book20.jpg'),
-        name: 'Countryside Orphan..',
-        rating: '41.3k',
-        part: '4',
-        status: 'Continue Writing',
-      },
-      {
-        id: 2,
-        cover: require('../../assets/images/Home/book17.jpg'),
-        name: 'Fairy Tale',
-        rating: '5M',
-        part: '5',
-        status: 'Continue Writing',
-      },
-      {
-        id: 3,
-        cover: require('../../assets/images/Home/book15.jpg'),
-        name: 'Love I will',
-        rating: '41.3k',
-        part: '10',
-        status: 'Continue Writing',
-      },
-    ],
-  },
-];
-
 const Writings = () => {
   const navigation = useNavigation();
   const [Published, setPublished] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loading2, setLoading2] = useState(false);
 
   useEffect(() => {
     writings();
   }, []);
 
   const writings = async () => {
+    setLoading(true);
     try {
       const response = await axios.get(
         `${BASE_URL}/v1/books/getbooks/${'6829c298feef054ab1e23837'}`,
@@ -76,6 +46,8 @@ const Writings = () => {
         'Error in login',
         error.response?.data?.message || error.message,
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,6 +56,7 @@ const Writings = () => {
   };
 
   const read = async (id, item) => {
+    setLoading2(true);
     try {
       const response = await axios.get(
         `${BASE_URL}/v1/books/get-decrypted-book/${id}`,
@@ -106,6 +79,8 @@ const Writings = () => {
         'Error in login',
         error.response?.data?.message || error.message,
       );
+    } finally {
+      setLoading2(false);
     }
   };
 
@@ -114,59 +89,77 @@ const Writings = () => {
       <ScrollView>
         <Text style={styles.headerText}>My Writings</Text>
 
-        {/* Published Books Section */}
-        <View style={{marginLeft: 15, marginVertical: 10}}>
-          <Text style={styles.sectionTitle}>{`Published Books`}</Text>
-        </View>
-        <FlatList
-          data={Published}
-          keyExtractor={item => item._id.oid}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={styles.bookContainer}
-              onPress={() => readBook(item)}>
-              <Image source={{uri: item.coverImage}} style={styles.bookImage} />
-              <View style={styles.bookInfo}>
-                <Text style={styles.bookTitle}>{item.title}</Text>
-                <Text style={styles.bookParts}>{item.category}</Text>
-                <View style={styles.statsContainer}>
-                  <View style={styles.statsItem}>
-                    <AntDesign
-                      name="eyeo"
-                      size={16}
-                      color={'rgba(98, 99, 109, 1)'}
-                    />
-                    <Text style={styles.statsText}>{item.readByUsers}</Text>
+        {loading ? (
+          <>
+            <ActivityIndicator size={'large'} color={'white'} />
+          </>
+        ) : (
+          <>
+            <View style={{marginLeft: 15, marginVertical: 10}}>
+              <Text style={styles.sectionTitle}>{`Published Books`}</Text>
+            </View>
+            <FlatList
+              data={Published}
+              keyExtractor={item => item._id.oid}
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={styles.bookContainer}
+                  onPress={() => readBook(item)}>
+                  <Image
+                    source={{uri: item.coverImage}}
+                    style={styles.bookImage}
+                  />
+                  <View style={styles.bookInfo}>
+                    <Text style={styles.bookTitle}>{item.title}</Text>
+                    <Text style={styles.bookParts}>{item.category}</Text>
+                    <View style={styles.statsContainer}>
+                      <View style={styles.statsItem}>
+                        <AntDesign
+                          name="eyeo"
+                          size={16}
+                          color={'rgba(98, 99, 109, 1)'}
+                        />
+                        <Text style={styles.statsText}>{item.readByUsers}</Text>
+                      </View>
+                      <View style={[styles.statsItem, {marginLeft: 25}]}>
+                        <AntDesign
+                          name="like1"
+                          size={16}
+                          color={'rgba(98, 99, 109, 1)'}
+                        />
+                        <Text style={styles.statsText}>{item.likes}</Text>
+                      </View>
+                      <View style={[styles.statsItem, {marginLeft: 25}]}>
+                        <AntDesign
+                          name="dislike1"
+                          size={16}
+                          color={'rgba(98, 99, 109, 1)'}
+                        />
+                        <Text style={styles.statsText}>{item.dislikes}</Text>
+                      </View>
+                    </View>
                   </View>
-                  <View style={[styles.statsItem, {marginLeft: 25}]}>
-                    <AntDesign
-                      name="like1"
-                      size={16}
-                      color={'rgba(98, 99, 109, 1)'}
-                    />
-                    <Text style={styles.statsText}>{item.likes}</Text>
-                  </View>
-                  <View style={[styles.statsItem, {marginLeft: 25}]}>
-                    <AntDesign
-                      name="dislike1"
-                      size={16}
-                      color={'rgba(98, 99, 109, 1)'}
-                    />
-                    <Text style={styles.statsText}>{item.dislikes}</Text>
-                  </View>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('BookInfo', {item})}>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  color={'rgba(98, 99, 109, 1)'}
-                  size={26}
-                />
-              </TouchableOpacity>
-            </TouchableOpacity>
-          )}
-        />
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('BookInfo', {item})}>
+                    {loading2 ? (
+                      <>
+                        <ActivityIndicator size={'small'} color={'white'} />
+                      </>
+                    ) : (
+                      <>
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          color={'rgba(98, 99, 109, 1)'}
+                          size={26}
+                        />
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              )}
+            />
+          </>
+        )}
       </ScrollView>
     </View>
   );

@@ -5,9 +5,9 @@ import {
   View,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import React, {useCallback, useEffect, useState} from 'react';
-import {COLORS} from '../../services/colors';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
@@ -17,6 +17,8 @@ import {BASE_URL} from '../../services/baseUrls';
 const Readings = () => {
   const navigation = useNavigation();
   const [bookmarkedBooks, setBookmarkedBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loading2, setLoading2] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -25,6 +27,7 @@ const Readings = () => {
   );
 
   const fetchBookmarks = async () => {
+    setLoading(true);
     try {
       const keys = await AsyncStorage.getAllKeys();
       const bookmarkKeys = keys.filter(k => k.startsWith('bookmark_'));
@@ -35,6 +38,8 @@ const Readings = () => {
       setBookmarkedBooks(books);
     } catch (e) {
       console.log('Failed to load bookmarks', e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,6 +48,7 @@ const Readings = () => {
   };
 
   const read = async (id, item) => {
+    setLoading2(true);
     try {
       const response = await axios.get(
         `${BASE_URL}/v1/books/get-decrypted-book/${id}`,
@@ -65,6 +71,8 @@ const Readings = () => {
         'Error in login',
         error.response?.data?.message || error.message,
       );
+    } finally {
+      setLoading2(false);
     }
   };
 
@@ -72,56 +80,76 @@ const Readings = () => {
     <View style={styles.container}>
       <Text style={styles.headerText}>My Readings</Text>
       <Text style={styles.sectionTitle}>Bookmarked Books</Text>
-      {bookmarkedBooks.length === 0 ? (
-        <Text
-          style={{
-            color: 'gray',
-            marginLeft: 14,
-            marginTop: 50,
-            fontFamily: 'Poppins-Medium',
-          }}>
-          No bookmarks yet
-        </Text>
+
+      {loading ? (
+        <>
+          <ActivityIndicator size={'small'} color={'white'} />
+        </>
       ) : (
-        <FlatList
-          data={bookmarkedBooks}
-          keyExtractor={item => item._id}
-          renderItem={({item}) => (
-            <View style={styles.sectionContainer}>
-              <TouchableOpacity
-                style={styles.bookContainer}
-                onPress={() => readBook(item)}>
-                <Image
-                  source={{uri: item.coverImage}}
-                  resizeMode="cover"
-                  style={styles.bookImage}
-                  borderRadius={6}
-                />
-                <View style={styles.bookInfo}>
-                  <Text style={styles.bookTitle}>{item.title}</Text>
-                  <Text style={styles.bookParts}>{item.category}</Text>
-                  <Text style={styles.bookAuthor}>
-                    {item?.writer?.fullName}
-                  </Text>
+        <>
+          {bookmarkedBooks.length === 0 ? (
+            <Text
+              style={{
+                color: 'gray',
+                marginLeft: 14,
+                marginTop: 50,
+                fontFamily: 'Poppins-Medium',
+              }}>
+              No bookmarks yet
+            </Text>
+          ) : (
+            <FlatList
+              data={bookmarkedBooks}
+              keyExtractor={item => item._id}
+              renderItem={({item}) => (
+                <View style={styles.sectionContainer}>
+                  <TouchableOpacity
+                    style={styles.bookContainer}
+                    onPress={() => readBook(item)}>
+                    <Image
+                      source={{uri: item.coverImage}}
+                      resizeMode="cover"
+                      style={styles.bookImage}
+                      borderRadius={6}
+                    />
+                    <View style={styles.bookInfo}>
+                      <Text style={styles.bookTitle}>{item.title}</Text>
+                      <Text style={styles.bookParts}>{item.category}</Text>
+                      <Text style={styles.bookAuthor}>
+                        {item?.writer?.fullName}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={{position: 'absolute', right: 15, top: 50}}>
+                      {loading2 ? (
+                        <>
+                          <ActivityIndicator size={'small'} color={'white'} />
+                        </>
+                      ) : (
+                        <>
+                          <AntDesign name="right" color={'white'} size={18} />
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {width: item.complete || '0%'},
+                      ]}
+                    />
+                  </View>
                 </View>
-                <TouchableOpacity
-                  style={{position: 'absolute', right: 15, top: 50}}>
-                  <AntDesign name="right" color={'white'} size={18} />
-                </TouchableOpacity>
-              </TouchableOpacity>
-              <View style={styles.progressBar}>
-                <View
-                  style={[styles.progressFill, {width: item.complete || '0%'}]}
-                />
-              </View>
-            </View>
+              )}
+              contentContainerStyle={{
+                paddingHorizontal: 10,
+                paddingBottom: 40,
+                paddingTop: 20,
+              }}
+            />
           )}
-          contentContainerStyle={{
-            paddingHorizontal: 10,
-            paddingBottom: 40,
-            paddingTop: 20,
-          }}
-        />
+        </>
       )}
     </View>
   );

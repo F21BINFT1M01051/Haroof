@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {COLORS} from '../../services/colors';
@@ -22,27 +23,13 @@ import firestore from '@react-native-firebase/firestore';
 import axios from 'axios';
 import {BASE_URL} from '../../services/baseUrls';
 import {useSelector} from 'react-redux';
+import Toast from 'react-native-toast-message';
 
 const Profile = () => {
   const navigation = useNavigation();
   const [image, setImage] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [profileImg, setProfileImg] = useState(null);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        const userDoc = await firestore()
-          .collection('Users')
-          .doc(currentUser.uid)
-          .get();
-        const userData = userDoc.data();
-        setUserData(userData);
-      }
-    };
-    fetchUserData();
-  }, []);
+  const [loading, setLoading] = useState(false);
 
   const imagePicker = () => {
     ImagePicker.openPicker({
@@ -55,7 +42,7 @@ const Profile = () => {
     })
       .then(selectedImage => {
         if (selectedImage.path) {
-          setImage({uri: selectedImage.path});
+          setImage(selectedImage.path);
           const data = new FormData();
           data.append('profileImage', {
             name: 'Profile_Image.png',
@@ -72,6 +59,7 @@ const Profile = () => {
   };
 
   const updateProfile = async data => {
+    setLoading(true);
     try {
       const response = await axios.put(
         `${BASE_URL}/v1/auth/update-profileImage`,
@@ -84,13 +72,23 @@ const Profile = () => {
         },
       );
       if (response.data.success) {
-        setProfileImg(response.data.user.profileImage);
+        Toast.show({
+          type: 'success',
+          text1: 'Profile Updation',
+          text2: 'Profile has been updated successfully!',
+        });
         console.log('data', response.data);
       } else {
         console.log(response.data.message);
+        Toast.show({
+          type: 'error',
+          text1: 'Profile Updation',
+          text2: response.data.message,
+        });
       }
     } catch (error) {
     } finally {
+      setLoading(false);
     }
   };
 
@@ -99,24 +97,11 @@ const Profile = () => {
   const logOut = async () => {
     navigation.navigate('SignIn');
     await AsyncStorage.removeItem('user');
-    // try {
-    //   const response = await axios.post(
-    //     `${BASE_URL}/v1/auth/logout`,
-    //     {},
-    //     {
-    //       withCredentials: true,
-    //     },
-    //   );
-    //   if (response.data.success) {
-    //     console.log('data', response.data);
-    //     navigation.navigate('SignIn');
-    //     await AsyncStorage.removeItem('user');
-    //   } else {
-    //     console.log(response.data.message);
-    //   }
-    // } catch (error) {
-    // } finally {
-    // }
+    Toast.show({
+      type: 'success',
+      text1: 'Log out',
+      text2: 'Log out successfully!',
+    });
   };
 
   return (
@@ -140,33 +125,43 @@ const Profile = () => {
             <Text style={styles.title}>Your Profile</Text>
           </View>
           <View style={{marginTop: 30}}>
-            <Image
-              source={
-                user.profileImage
-                  ? {uri: user.profileImage}
-                  : require('../../assets/images/Home/Tutor.png')
-              }
-              resizeMode="cover"
-              borderRadius={50}
-              style={{
-                width: 85,
-                height: 85,
-                alignSelf: 'center',
-              }}
-            />
-            <TouchableOpacity onPress={imagePicker}>
-              <Image
-                source={require('../../assets/images/Home/Camera.png')}
-                resizeMode="contain"
-                style={{
-                  width: 28,
-                  height: 28,
-                  alignSelf: 'center',
-                  marginTop: -27,
-                  marginLeft: 47,
-                }}
-              />
-            </TouchableOpacity>
+            {loading ? (
+              <>
+                <ActivityIndicator size={'large'} color={'white'} />
+              </>
+            ) : (
+              <>
+                <Image
+                  source={
+                    image
+                      ? {uri: image}
+                      : user.profileImage
+                      ? {uri: user.profileImage}
+                      : require('../../assets/images/Home/Tutor.png')
+                  }
+                  resizeMode="cover"
+                  borderRadius={50}
+                  style={{
+                    width: 85,
+                    height: 85,
+                    alignSelf: 'center',
+                  }}
+                />
+                <TouchableOpacity onPress={imagePicker}>
+                  <Image
+                    source={require('../../assets/images/Home/Camera.png')}
+                    resizeMode="contain"
+                    style={{
+                      width: 28,
+                      height: 28,
+                      alignSelf: 'center',
+                      marginTop: -27,
+                      marginLeft: 47,
+                    }}
+                  />
+                </TouchableOpacity>
+              </>
+            )}
             <Text
               style={{
                 alignSelf: 'center',
@@ -177,7 +172,7 @@ const Profile = () => {
                 color: COLORS.heading,
                 marginTop: 10,
               }}>
-              {userData?.name}
+              {user?.fullName}
             </Text>
           </View>
           <View style={{marginTop: 28, alignSelf: 'center'}}>
@@ -203,9 +198,9 @@ const Profile = () => {
 
             <ProfileComponentTwo
               img1={require('../../assets/images/Home/userIcon.png')}
-              text1={userData?.name}
+              text1={user?.fullName}
               img={require('../../assets/images/Home/right.png')}
-              email={userData?.email}
+              email={user?.email}
               texting={{fontFamily: 'Roboto-Bold'}}
               clickButton={() => navigation.navigate('EditProfile')}
             />

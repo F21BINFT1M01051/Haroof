@@ -6,6 +6,7 @@ import {
   Image,
   FlatList,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import React, {useState} from 'react';
 import {COLORS} from '../../../services/colors';
@@ -22,31 +23,15 @@ import {BASE_URL} from '../../../services/baseUrls';
 
 const BookInfo = ({route}) => {
   const {item} = route.params;
-  const [favourite, setFavourite] = useState(false);
   const navigation = useNavigation();
-
-  const handleFavourite = () => {
-    setFavourite(!favourite);
-    if (favourite) {
-      Toast.show({
-        type: 'success',
-        text1: 'Add to favorites',
-        text2: `${item.title} is added to favourites`,
-      });
-    } else {
-      Toast.show({
-        type: 'success',
-        text1: 'Remove to favorites',
-        text2: `${item.title} is removed from favourites`,
-      });
-    }
-  };
+  const [loading, setLoading] = useState(false);
 
   const readBook = () => {
     read(item._id);
   };
 
   const read = async id => {
+    setLoading(true);
     try {
       const response = await axios.get(
         `${BASE_URL}/v1/books/get-decrypted-book/${id}`,
@@ -59,14 +44,15 @@ const BookInfo = ({route}) => {
         navigation.navigate('Read', {
           item: response.data.content,
           name: item.title,
-          bookData : item
+          bookData: item,
         });
       } else {
         console.log(response.data.message);
       }
     } catch (error) {
       console.log('Error in login', error.response.data.message);
-      setError(error.response.data.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -222,19 +208,27 @@ const BookInfo = ({route}) => {
                   justifyContent: 'center',
                   flexDirection: 'row',
                 }}>
-                <FontAwesome5
-                  name="book-open"
-                  color={COLORS.heading}
-                  size={16}
-                />
-                <Text
-                  style={{
-                    color: COLORS.heading,
-                    left: 6,
-                    fontFamily: 'Roboto-Medium',
-                  }}>
-                  Read
-                </Text>
+                {loading ? (
+                  <>
+                    <ActivityIndicator size={'small'} color={'white'} />
+                  </>
+                ) : (
+                  <>
+                    <FontAwesome5
+                      name="book-open"
+                      color={COLORS.heading}
+                      size={16}
+                    />
+                    <Text
+                      style={{
+                        color: COLORS.heading,
+                        left: 6,
+                        fontFamily: 'Roboto-Medium',
+                      }}>
+                      Read
+                    </Text>
+                  </>
+                )}
               </View>
             </TouchableOpacity>
             {/* <TouchableOpacity onPress={handleFavourite}>
@@ -313,7 +307,7 @@ const BookInfo = ({route}) => {
                       fontFamily: 'Roboto-Regular',
                       bottom: 10,
                       left: 10,
-                      marginTop:10
+                      marginTop: 10,
                     }}>
                     {item.writer.fullName}
                   </Text>

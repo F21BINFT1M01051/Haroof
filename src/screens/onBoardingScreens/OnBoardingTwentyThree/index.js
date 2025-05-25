@@ -18,12 +18,13 @@ import * as yup from 'yup';
 import {Formik} from 'formik';
 import {useNavigation} from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { BASE_URL } from '../../../services/baseUrls';
+import {BASE_URL} from '../../../services/baseUrls';
+import {userData} from '../../redux/Actions';
 
 const {width, height} = Dimensions.get('window');
 
@@ -32,6 +33,7 @@ const OnBoardingTwentyThree = props => {
   const formikRef = useRef(null);
   const options = useSelector(state => state.form);
   const base_url = 'http://192.168.249.193:3000';
+  const dispatch = useDispatch();
 
   const navigation = useNavigation();
   const validationSchema = yup.object({
@@ -42,50 +44,49 @@ const OnBoardingTwentyThree = props => {
   });
 
   const handleSignUp = async values => {
-    const payload = {
-      fullName: values.name,
-      password: values.password,
-      email: values.email,
-    };
-    userRegister(payload);
-
-    // setLoading(true);
-    // try {
-    //   const userCredential = await auth().createUserWithEmailAndPassword(
-    //     values.email,
-    //     values.password,
-    //   );
-    //   const user = userCredential.user;
-    //   let profileUrl = '';
-    //   const userData = {
-    //     name: values.name,
-    //     email: values.email,
-    //     genres: options.genreSelection,
-    //     uid: user.uid,
-    //     profile: profileUrl || null,
-    //     writer: false,
-    //     createdAt: firestore.FieldValue.serverTimestamp(),
-    //   };
-    //   await firestore().collection('Users').doc(user.uid).set(userData);
-    //   await AsyncStorage.setItem('email', values.email);
-    //   await AsyncStorage.setItem('password', values.password);
-    //   navigation.navigate('HomeBasic');
-    // } catch (error) {
-    // } finally {
-    //   setLoading(false);
-    // }
+    setLoading(true);
+    try {
+      const payload = {
+        fullName: values.name,
+        password: values.password,
+        email: values.email,
+      };
+      await userRegister(payload);
+    } catch (error) {
+      console.log('handleSignUp error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const userRegister = async data => {
     try {
       const response = await axios.post(`${BASE_URL}/v1/auth/signup`, data);
-      // console.log('response...........', response);
-      if(response.data.success){
-        console.log("data",response.data.user);
+      if (response.data.success) {
         navigation.navigate('HomeBasic');
-        
+        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+        dispatch(userData(response.data.user));
+        Toast.show({
+          type: 'success',
+          text1: 'Sign Up',
+          text2: 'User registered successfully!',
+        });
+      } else {
+        console.log('Signup failed:', response.data.message);
+        Toast.show({
+          type: 'error',
+          text1: 'Sign Up',
+          text2: response.data.message,
+        });
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log('userRegister error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Sign Up',
+        text2:  error.response.data.message,
+      });
+    }
   };
 
   return (

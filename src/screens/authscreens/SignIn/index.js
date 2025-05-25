@@ -23,43 +23,35 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {BASE_URL} from '../../../services/baseUrls';
-import { useDispatch } from 'react-redux';
-import { userData } from '../../redux/Actions';
+import {useDispatch} from 'react-redux';
+import {userData} from '../../redux/Actions';
+import Toast from 'react-native-toast-message';
 const {width, height} = Dimensions.get('window');
 
 export default function SignIn(props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
-  const dispatch = useDispatch()
-  
+  const dispatch = useDispatch();
+
   let validationSchema = yup.object({
     email: yup.string().email('Invalid email').required('Email is required'),
     password: yup.string().required('Password is required'),
   });
 
   const handleSignIn = async values => {
-    const payload = {
-      email: values.email,
-      password: values.password,
-    };
-
-    userLogin(payload);
-
-    // setLoading(true);
-    // try {
-    //   const userCredential = await auth().signInWithEmailAndPassword(
-    //     values.email,
-    //     values.password,
-    //   );
-    //   navigation.navigate('HomeBasic');
-    //   await AsyncStorage.setItem('email', values.email);
-    //   await AsyncStorage.setItem('password', values.password);
-    //   await AsyncStorage.setItem('logout', 'no');
-    // } catch (error) {
-    // } finally {
-    //   setLoading(false);
-    // }
+    setLoading(true);
+    try {
+      const payload = {
+        email: values.email,
+        password: values.password,
+      };
+      await userLogin(payload);
+    } catch (error) {
+      console.log('handleSignIn error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const userLogin = async data => {
@@ -70,15 +62,29 @@ export default function SignIn(props) {
       // console.log('response...........', response);
       if (response.data.success) {
         console.log('data', response.data.user);
-        navigation.navigate('HomeBasic', {user: response.data.user});
+        navigation.navigate('HomeBasic');
         await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
-        dispatch(userData( response.data.user))
+        dispatch(userData(response.data.user));
+        Toast.show({
+          type: 'success',
+          text1: 'Sign In',
+          text2: 'User signed in successfully!',
+        });
       } else {
         console.log(response.data.message);
+        Toast.show({
+          type: 'error',
+          text1: 'Sign In',
+          text2: response.data.message,
+        });
       }
     } catch (error) {
       console.log('Error in login', error.response.data.message);
-      setError(error.response.data.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Sign In',
+        text2: error.response.data.message,
+      });
     }
   };
 

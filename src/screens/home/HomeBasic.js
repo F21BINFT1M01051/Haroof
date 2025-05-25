@@ -8,16 +8,14 @@ import {
   FlatList,
   ScrollView,
   TextInput,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import React, {useState, useEffect} from 'react';
 import ProfileSection from '../../customcompoents/newComponents/HomeScreenComponents/ProfileSection';
 import TutorCard from '../../customcompoents/newComponents/HomeScreenComponents/TutorCard';
 import {useNavigation} from '@react-navigation/native';
 import Feather from 'react-native-vector-icons/Feather';
-import {data} from '../../services/books';
-import {Old} from '../../services/oldBooks';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 import {useSelector} from 'react-redux';
 import axios from 'axios';
 import {BASE_URL} from '../../services/baseUrls';
@@ -26,19 +24,29 @@ import {booksData} from '../redux/Actions';
 const {width} = Dimensions.get('window');
 
 const HomeBasic = () => {
-  // const {user} = route.params
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
   const [bookData, setbookData] = useState([]);
-
+  const [loading, setLoading] = useState(false);
   const user = useSelector(state => state.form.user);
-  const Books = useSelector(state => state.form.books);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    books();
+    setLoading(true);
+    setTimeout(() => {
+      setRefreshing(false);
+      setLoading(false);
+    }, 1500);
+  };
 
   useEffect(() => {
     books();
   }, []);
 
   const books = async data => {
+    setLoading(true);
     try {
       const response = await axios.get(`${BASE_URL}/v1/books/getallbooks`, {
         withCredentials: true,
@@ -54,6 +62,8 @@ const HomeBasic = () => {
     } catch (error) {
       console.log('Error in login', error.response.data.message);
       setError(error.response.data.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,6 +76,9 @@ const HomeBasic = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         contentContainerStyle={{paddingBottom: 30}}
         showsVerticalScrollIndicator={false}>
         <View style={{paddingHorizontal: width * 0.05}}>
@@ -94,123 +107,135 @@ const HomeBasic = () => {
           </View>
         </View>
 
-        <View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginTop: 20,
-              marginHorizontal: 20,
-            }}>
-            <Text
-              style={{
-                color: 'white',
-                fontSize: 18,
-                fontFamily: 'Roboto-Medium',
-              }}>
-              Top Rated
-            </Text>
-          </View>
-        </View>
-
-        <View style={{marginTop: 15}}>
-          {bookData.length === 0 ? (
-            <>
-              <Text
+        {loading ? (
+          <>
+            <ActivityIndicator size={'large'} color={'white'} />
+          </>
+        ) : (
+          <>
+            <View>
+              <View
                 style={{
-                  textAlign: 'center',
-                  color: 'white',
-                  fontFamily: 'Roboto-Medium',
-                  marginVertical: 10,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginTop: 20,
+                  marginHorizontal: 20,
                 }}>
-                Not Found in Top Rated
-              </Text>
-            </>
-          ) : (
-            <>
-              <FlatList
-                data={search ? filteredData : bookData}
-                keyExtractor={item => item._id}
-                horizontal
-                renderItem={({item}) => {
-                  return (
-                    <View style={{marginHorizontal: 10}}>
-                      <TutorCard
-                        img={item.coverImage}
-                        name={item.title}
-                        text2={item.writer.fullName}
-                        rating={item.readByUsers}
-                        view={true}
-                        onPress={() => navigation.navigate('BookInfo', {item})}
-                      />
-                    </View>
-                  );
-                }}
-                contentContainerStyle={{paddingLeft: 10}}
-                showsHorizontalScrollIndicator={false}
-              />
-            </>
-          )}
-        </View>
+                <Text
+                  style={{
+                    color: 'white',
+                    fontSize: 18,
+                    fontFamily: 'Roboto-Medium',
+                  }}>
+                  Top Rated
+                </Text>
+              </View>
+            </View>
 
-        <View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginTop: 25,
-              marginHorizontal: 20,
-            }}>
-            <Text
-              style={{
-                color: 'white',
-                fontSize: 18,
-                fontFamily: 'Roboto-Medium',
-              }}>
-              Recently Uploaded Books
-            </Text>
-          </View>
-        </View>
+            <View style={{marginTop: 15}}>
+              {bookData.length === 0 ? (
+                <>
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      color: 'white',
+                      fontFamily: 'Roboto-Medium',
+                      marginVertical: 10,
+                    }}>
+                    Not Found in Top Rated
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <FlatList
+                    data={search ? filteredData : bookData}
+                    keyExtractor={item => item._id}
+                    horizontal
+                    renderItem={({item}) => {
+                      return (
+                        <View style={{marginHorizontal: 10}}>
+                          <TutorCard
+                            img={item.coverImage}
+                            name={item.title}
+                            text2={item.writer.fullName}
+                            rating={item.readByUsers}
+                            view={true}
+                            onPress={() =>
+                              navigation.navigate('BookInfo', {item})
+                            }
+                          />
+                        </View>
+                      );
+                    }}
+                    contentContainerStyle={{paddingLeft: 10}}
+                    showsHorizontalScrollIndicator={false}
+                  />
+                </>
+              )}
+            </View>
 
-        <View style={{marginTop: 15}}>
-          {bookData.length === 0 ? (
-            <>
-              <Text
+            <View>
+              <View
                 style={{
-                  textAlign: 'center',
-                  color: 'white',
-                  fontFamily: 'Roboto-Medium',
-                  marginVertical: 10,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginTop: 25,
+                  marginHorizontal: 20,
                 }}>
-                Not Found in Recommended
-              </Text>
-            </>
-          ) : (
-            <>
-              <FlatList
-                data={search ? filteredData : bookData}
-                keyExtractor={item => item._id}
-                horizontal
-                renderItem={({item}) => {
-                  return (
-                    <View style={{marginHorizontal: 10}}>
-                      <TutorCard
-                        img={item.coverImage}
-                        name={item.title}
-                        text2={item.writer.fullName}
-                        rating={item.readByUsers}
-                        view={true}
-                        onPress={() => navigation.navigate('BookInfo', {item})}
-                      />
-                    </View>
-                  );
-                }}
-                contentContainerStyle={{paddingLeft: 10}}
-                showsHorizontalScrollIndicator={false}
-              />
-            </>
-          )}
-        </View>
+                <Text
+                  style={{
+                    color: 'white',
+                    fontSize: 18,
+                    fontFamily: 'Roboto-Medium',
+                  }}>
+                  Recently Uploaded Books
+                </Text>
+              </View>
+            </View>
+
+            <View style={{marginTop: 15}}>
+              {bookData.length === 0 ? (
+                <>
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      color: 'white',
+                      fontFamily: 'Roboto-Medium',
+                      marginVertical: 10,
+                    }}>
+                    Not Found in Recommended
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <FlatList
+                    data={search ? filteredData : bookData}
+                    keyExtractor={item => item._id}
+                    horizontal
+                    renderItem={({item}) => {
+                      return (
+                        <View style={{marginHorizontal: 10}}>
+                          <TutorCard
+                            img={item.coverImage}
+                            name={item.title}
+                            text2={item.writer.fullName}
+                            rating={item.readByUsers}
+                            view={true}
+                            onPress={() =>
+                              navigation.navigate('BookInfo', {item})
+                            }
+                          />
+                        </View>
+                      );
+                    }}
+                    contentContainerStyle={{paddingLeft: 10}}
+                    showsHorizontalScrollIndicator={false}
+                  />
+                </>
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
