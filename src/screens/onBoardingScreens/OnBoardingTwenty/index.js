@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, {useState, useRef} from 'react';
 import {
   StyleSheet,
   Text,
@@ -15,26 +15,26 @@ import {
 import PrimaryText from '../../../customcompoents/newComponents/PrimaryText';
 import InputField from '../../../customcompoents/newComponents/InputField';
 import Button from '../../../customcompoents/newComponents/Button';
-import { COLORS } from '../../../services/colors';
+import {COLORS} from '../../../services/colors';
 import CustomPhoneInput from '../../../customcompoents/newComponents/PhoneInput';
-import { MaterialCommunityIcons } from 'react-native-vector-icons/MaterialCommunityIcons';
+import {MaterialCommunityIcons} from 'react-native-vector-icons/MaterialCommunityIcons';
 // import { apiRequest } from '../../../../services/apiServices';
-import { Formik } from 'formik';
+import {Formik} from 'formik';
 // import Toast from 'react-native-toast-message';
-import { IMAGES } from '../../../services/images';
+import {IMAGES} from '../../../services/images';
+import axios from 'axios';
 
 import * as yup from 'yup';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 const OnBoardingTwenty = props => {
   const [checked, setChecked] = useState(false);
-  const [isValidPhone, setIsValidPhone] = useState(false)
+  const [isValidPhone, setIsValidPhone] = useState(false);
   const [countryCode, setCountryCode] = useState('');
   const [loading, setLoading] = useState(false);
-
-
+  
 
   const schema1 = yup.object().shape({
     firstName: yup.string().required('First Name is required'),
@@ -42,27 +42,40 @@ const OnBoardingTwenty = props => {
     phoneNumber: yup.string().required('Phone Number is required'),
     address: yup.string().required('Provide your address'),
   });
-  
+
   const navigation = useNavigation();
 
   const handleNext = async values => {
-    if (values.firstName && values.lastName && values.address && values.phoneNumber && checked) {
-      navigation.navigate('OnBoardingTwentyOne')
+    if (
+      values.firstName &&
+      values.lastName &&
+      values.address &&
+      values.phoneNumber &&
+      checked
+    ) {
+      const payload = {
+
+      }
+
     }
   };
 
-
-
+  const userRegister = async data => {
+    try {
+      const response = await axios.post(`${base_url}/v1/auth/signup`, data);
+      console.log('response...........', response);
+      navigation.navigate('OnBoardingTwentyOne');
+    } catch (error) {}
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{flex: 1}}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-
-        <View style={{ paddingHorizontal: width * 0.056, marginVertical: 10 }}>
-          <View style={{ marginTop: 10 }}>
+        <View style={{paddingHorizontal: width * 0.056, marginVertical: 10}}>
+          <View style={{marginTop: 10}}>
             <PrimaryText Heading={`User Information`} />
           </View>
         </View>
@@ -81,14 +94,12 @@ const OnBoardingTwenty = props => {
                 firstName: '',
                 lastName: '',
                 phoneNumber: '',
-                address: ''
-
+                address: '',
               }}
               validationSchema={schema1}
               onSubmit={values => {
                 handleNext(values);
-              }}
-            >
+              }}>
               {({
                 handleChange,
                 handleBlur,
@@ -149,7 +160,8 @@ const OnBoardingTwenty = props => {
                         phone={values.phoneNumber}
                         style={{
                           borderColor:
-                            (!isValidPhone && values.phoneNumber || (touched.phoneNumber && errors.phoneNumber))
+                            (!isValidPhone && values.phoneNumber) ||
+                            (touched.phoneNumber && errors.phoneNumber)
                               ? 'rgba(255, 0, 0, 0.5)'
                               : 'rgba(255, 255, 255, 0.23)',
                         }}
@@ -183,11 +195,11 @@ const OnBoardingTwenty = props => {
                       flexDirection: 'row',
                       marginBottom: 5,
                     }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
                       <TouchableOpacity onPress={() => setChecked(!checked)}>
                         <Image
                           source={checked ? IMAGES.checked : IMAGES.unchecked}
-                          style={{ width: 22, height: 22 }}
+                          style={{width: 22, height: 22}}
                           resizeMode="contain"
                         />
                       </TouchableOpacity>
@@ -206,7 +218,11 @@ const OnBoardingTwenty = props => {
                   </View>
 
                   <View
-                    style={{ marginVertical: 20, alignItems: 'center', marginBottom: 30 }}>
+                    style={{
+                      marginVertical: 20,
+                      alignItems: 'center',
+                      marginBottom: 30,
+                    }}>
                     <Button
                       loading={loading}
                       title={`Next`}
@@ -216,7 +232,7 @@ const OnBoardingTwenty = props => {
                           : 'rgba(0, 95, 73, 0.3)',
                       }}
                       press={handleSubmit}
-                      textStyle={{ fontSize: 16, fontFamily: 'Roboto-SemiBold' }}
+                      textStyle={{fontSize: 16, fontFamily: 'Roboto-SemiBold'}}
                     />
                   </View>
                 </>
@@ -225,7 +241,6 @@ const OnBoardingTwenty = props => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
     </SafeAreaView>
   );
 };
@@ -241,7 +256,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.06,
     backgroundColor: COLORS.backgroundColor,
     flex: 1,
-    marginTop: 50
+    marginTop: 50,
     // position:'absolute',
     // backgroundColor: 'red',
   },

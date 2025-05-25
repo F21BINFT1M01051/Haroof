@@ -6,7 +6,7 @@ import {useNavigation} from '@react-navigation/native';
 const data = [
   {
     id: 1,
-    name: 'Classic Literature',
+    name: 'Thriller',
     img: require('../../assets/images/Home/classic.jpg'),
   },
   {
@@ -16,7 +16,7 @@ const data = [
   },
   {
     id: 3,
-    name: 'Science and Technology',
+    name: 'Horror',
     img: require('../../assets/images/Home/technology.jpg'),
   },
   {
@@ -26,7 +26,7 @@ const data = [
   },
   {
     id: 5,
-    name: 'Romantic Stories',
+    name: 'Romance',
     img: require('../../assets/images/Home/romance.jpg'),
   },
   {
@@ -57,6 +57,8 @@ const data = [
   },
 ];
 
+
+
 const Cateories = () => {
   const navigation = useNavigation();
   return (
@@ -71,7 +73,7 @@ const Cateories = () => {
             <TouchableOpacity
               style={styles.itemContainer}
               onPress={() =>
-                navigation.navigate('CategoryDetail', {category: item})
+                navigation.navigate('CategoryDetail', {category: item.name})
               }>
               <Image
                 source={item.img}

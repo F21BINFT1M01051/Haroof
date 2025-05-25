@@ -6,67 +6,123 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {COLORS} from '../../services/colors';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {recent} from '../../services/readings';
-import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import axios from 'axios';
+import {BASE_URL} from '../../services/baseUrls';
 
 const Readings = () => {
- const navigation = useNavigation()
+  const navigation = useNavigation();
+  const [bookmarkedBooks, setBookmarkedBooks] = useState([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBookmarks();
+    }, []),
+  );
+
+  const fetchBookmarks = async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const bookmarkKeys = keys.filter(k => k.startsWith('bookmark_'));
+      const bookmarkData = await AsyncStorage.multiGet(bookmarkKeys);
+      const books = bookmarkData.map(
+        ([_, value]) => JSON.parse(value).bookData,
+      );
+      setBookmarkedBooks(books);
+    } catch (e) {
+      console.log('Failed to load bookmarks', e);
+    }
+  };
+
+  const readBook = item => {
+    read(item._id, item);
+  };
+
+  const read = async (id, item) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/v1/books/get-decrypted-book/${id}`,
+        {
+          withCredentials: true,
+        },
+      );
+      if (response.data.success) {
+        console.log('data', response.data.content);
+        navigation.navigate('Read', {
+          item: response.data.content, // decrypted content
+          name: item.title, // book title
+          bookData: item, // original book info
+        });
+      } else {
+        console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log(
+        'Error in login',
+        error.response?.data?.message || error.message,
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.headerText}>My Readings</Text>
-      <Text style={styles.sectionTitle}>Recent Readings</Text>
-      <FlatList
-        data={recent}
-        keyExtractor={item => item._id.oid}
-        renderItem={({item}) => (
-          <View style={styles.sectionContainer}>
-            <TouchableOpacity
-              style={styles.bookContainer}
-              onPress={() => navigation.navigate('BookInfo', {item})}>
-              <Image
-                source={{uri: item.coverImage}}
-                resizeMode="cover"
-                style={styles.bookImage}
-                borderRadius={6}
-              />
-              <View style={styles.bookInfo}>
-                <Text style={styles.bookTitle}>{item.title}</Text>
-                <Text style={styles.bookParts}>{item.parts} parts</Text>
-                <Text style={styles.bookAuthor}>{item.author}</Text>
-              </View>
+      <Text style={styles.sectionTitle}>Bookmarked Books</Text>
+      {bookmarkedBooks.length === 0 ? (
+        <Text
+          style={{
+            color: 'gray',
+            marginLeft: 14,
+            marginTop: 50,
+            fontFamily: 'Poppins-Medium',
+          }}>
+          No bookmarks yet
+        </Text>
+      ) : (
+        <FlatList
+          data={bookmarkedBooks}
+          keyExtractor={item => item._id}
+          renderItem={({item}) => (
+            <View style={styles.sectionContainer}>
               <TouchableOpacity
-                style={{position: 'absolute', right: 15, top: 50}}>
-                <AntDesign name="right" color={'white'} size={18} />
+                style={styles.bookContainer}
+                onPress={() => readBook(item)}>
+                <Image
+                  source={{uri: item.coverImage}}
+                  resizeMode="cover"
+                  style={styles.bookImage}
+                  borderRadius={6}
+                />
+                <View style={styles.bookInfo}>
+                  <Text style={styles.bookTitle}>{item.title}</Text>
+                  <Text style={styles.bookParts}>{item.category}</Text>
+                  <Text style={styles.bookAuthor}>
+                    {item?.writer?.fullName}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={{position: 'absolute', right: 15, top: 50}}>
+                  <AntDesign name="right" color={'white'} size={18} />
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
-            <View
-              style={{
-                backgroundColor: COLORS.grey,
-                width: '94%',
-                height: 3,
-                borderRadius: 20,
-                marginHorizontal: 10,
-              }}>
-              <View
-                style={{
-                  backgroundColor: COLORS.greenText,
-                  width: item.complete,
-                  height: 3,
-                  borderRadius: 20,
-                }}></View>
+              <View style={styles.progressBar}>
+                <View
+                  style={[styles.progressFill, {width: item.complete || '0%'}]}
+                />
+              </View>
             </View>
-          </View>
-        )}
-        contentContainerStyle={{
-          paddingHorizontal: 10,
-          paddingBottom: 40,
-          paddingTop: 20,
-        }}
-      />
+          )}
+          contentContainerStyle={{
+            paddingHorizontal: 10,
+            paddingBottom: 40,
+            paddingTop: 20,
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -81,16 +137,16 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 20,
     textAlign: 'center',
     fontFamily: 'Roboto-Medium',
   },
   sectionContainer: {},
   sectionTitle: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     marginLeft: 14,
-    top: 20,
+    marginTop: 30,
     fontFamily: 'Roboto-Medium',
   },
   bookContainer: {

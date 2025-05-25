@@ -22,6 +22,8 @@ import {useSelector} from 'react-redux';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { BASE_URL } from '../../../services/baseUrls';
 
 const {width, height} = Dimensions.get('window');
 
@@ -29,6 +31,7 @@ const OnBoardingTwentyThree = props => {
   const [loading, setLoading] = useState(false);
   const formikRef = useRef(null);
   const options = useSelector(state => state.form);
+  const base_url = 'http://192.168.249.193:3000';
 
   const navigation = useNavigation();
   const validationSchema = yup.object({
@@ -38,35 +41,52 @@ const OnBoardingTwentyThree = props => {
     name: yup.string().required('Name is required'),
   });
 
-
   const handleSignUp = async values => {
-    setLoading(true);
-    try {
-      const userCredential = await auth().createUserWithEmailAndPassword(
-        values.email,
-        values.password,
-      );
-      const user = userCredential.user;
-      let profileUrl = '';
-      const userData = {
-        name: values.name,
-        email: values.email,
-        genres: options.genreSelection,
-        uid: user.uid,
-        profile: profileUrl || null,
-        writer: false,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-      };
-      await firestore().collection('Users').doc(user.uid).set(userData);
-      await AsyncStorage.setItem('email', values.email);
-      await AsyncStorage.setItem('password', values.password);
-      navigation.navigate('HomeBasic');
-    } catch (error) {
-    } finally {
-      setLoading(false);
-    }
+    const payload = {
+      fullName: values.name,
+      password: values.password,
+      email: values.email,
+    };
+    userRegister(payload);
+
+    // setLoading(true);
+    // try {
+    //   const userCredential = await auth().createUserWithEmailAndPassword(
+    //     values.email,
+    //     values.password,
+    //   );
+    //   const user = userCredential.user;
+    //   let profileUrl = '';
+    //   const userData = {
+    //     name: values.name,
+    //     email: values.email,
+    //     genres: options.genreSelection,
+    //     uid: user.uid,
+    //     profile: profileUrl || null,
+    //     writer: false,
+    //     createdAt: firestore.FieldValue.serverTimestamp(),
+    //   };
+    //   await firestore().collection('Users').doc(user.uid).set(userData);
+    //   await AsyncStorage.setItem('email', values.email);
+    //   await AsyncStorage.setItem('password', values.password);
+    //   navigation.navigate('HomeBasic');
+    // } catch (error) {
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
+  const userRegister = async data => {
+    try {
+      const response = await axios.post(`${BASE_URL}/v1/auth/signup`, data);
+      // console.log('response...........', response);
+      if(response.data.success){
+        console.log("data",response.data.user);
+        navigation.navigate('HomeBasic');
+        
+      }
+    } catch (error) {}
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -17,6 +17,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import {useNavigation} from '@react-navigation/native';
 import moment from 'moment/moment';
 import Toast from 'react-native-toast-message';
+import axios from 'axios';
+import {BASE_URL} from '../../../services/baseUrls';
 
 const BookInfo = ({route}) => {
   const {item} = route.params;
@@ -31,13 +33,40 @@ const BookInfo = ({route}) => {
         text1: 'Add to favorites',
         text2: `${item.title} is added to favourites`,
       });
-    }
-    else {
-       Toast.show({
+    } else {
+      Toast.show({
         type: 'success',
         text1: 'Remove to favorites',
         text2: `${item.title} is removed from favourites`,
       });
+    }
+  };
+
+  const readBook = () => {
+    read(item._id);
+  };
+
+  const read = async id => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/v1/books/get-decrypted-book/${id}`,
+        {
+          withCredentials: true,
+        },
+      );
+      if (response.data.success) {
+        console.log('data', response.data.content);
+        navigation.navigate('Read', {
+          item: response.data.content,
+          name: item.title,
+          bookData : item
+        });
+      } else {
+        console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log('Error in login', error.response.data.message);
+      setError(error.response.data.message);
     }
   };
 
@@ -54,13 +83,13 @@ const BookInfo = ({route}) => {
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={{position: 'absolute', left: 0}}>
-              <AntDesign name="arrowleft" color={'white'} size={18} />
+              <AntDesign name="arrowleft" color={'white'} size={22} />
             </TouchableOpacity>
             <Text
               style={{
                 color: 'white',
                 fontFamily: 'Roboto-Medium',
-                fontSize: 16,
+                fontSize: 18,
               }}>
               Book Information
             </Text>
@@ -72,7 +101,7 @@ const BookInfo = ({route}) => {
               borderWidth: 0.4,
               borderColor: 'rgba(72, 72, 72, 0.5)',
               borderRadius: 20,
-              marginTop: 20,
+              marginTop: 50,
             }}>
             <View style={{flexDirection: 'row'}}>
               <Image
@@ -97,7 +126,7 @@ const BookInfo = ({route}) => {
                     fontSize: 15,
                     marginTop: 3,
                   }}>
-                  {item.author}
+                  {item?.writer?.fullName}
                 </Text>
                 <View
                   style={{
@@ -182,10 +211,7 @@ const BookInfo = ({route}) => {
               paddingHorizontal: 35,
               marginTop: 20,
             }}>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate('Read', {item: item.parstData[0]})
-              }>
+            <TouchableOpacity onPress={readBook}>
               <View
                 style={{
                   width: 120,
@@ -211,7 +237,7 @@ const BookInfo = ({route}) => {
                 </Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleFavourite}>
+            {/* <TouchableOpacity onPress={handleFavourite}>
               <View
                 style={{
                   width: 120,
@@ -232,7 +258,7 @@ const BookInfo = ({route}) => {
                   {favourite ? 'Remove' : 'Favourite'}
                 </Text>
               </View>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           <View style={{marginTop: 30}}>
             <View>
@@ -247,7 +273,7 @@ const BookInfo = ({route}) => {
               <Text
                 style={{
                   color: COLORS.heading,
-                  fontSize: 13,
+                  fontSize: 14,
                   textAlign: 'justify',
                   marginTop: 5,
                   lineHeight: 20,
@@ -256,143 +282,52 @@ const BookInfo = ({route}) => {
               </Text>
             </View>
           </View>
-          <View style={{marginTop: 30}}>
-            <View>
+
+          <View>
+            <View style={{marginTop: 30}}>
               <Text
                 style={{
                   color: COLORS.heading,
                   fontSize: 18,
-                  fontFamily: 'Roboto-Bold',
+                  fontFamily: 'Roboto-Medium',
                 }}>
-                Chapters : {`${item.parts}`}
+                Writer
               </Text>
-              <View style={{marginTop: 20}}>
-                <FlatList
-                  data={item.parstData}
-                  keyExtractor={item => item.index}
-                  contentContainerStyle={{paddingBottom: 50}}
-                  showsVerticalScrollIndicator={false}
-                  renderItem={({item}) => {
-                    return (
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigation.navigate('Read', {item: item})
-                        }
-                        style={{marginTop: 10}}>
-                        <View
-                          style={{
-                            width: '100%',
-                            padding: 12,
-                            borderWidth: 0.4,
-                            borderColor: 'rgba(72, 72, 72, 0.5)',
-                            borderRadius: 14,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            margintop: 14,
-                          }}>
-                          <View>
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                              }}>
-                              <Text
-                                style={{
-                                  color: COLORS.heading,
-                                  fontSize: 15,
-                                  fontFamily: 'Roboto-Medium',
-                                  width: 250,
-                                  lineHeight: 20,
-                                }}>
-                                {item.name}
-                              </Text>
-                            </View>
-
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                marginTop: 16,
-                                width: 170,
-                              }}>
-                              <View
-                                style={{
-                                  flexDirection: 'row',
-                                  alignItems: 'center',
-                                }}>
-                                <AntDesign
-                                  name="like1"
-                                  color={COLORS.grey}
-                                  size={14}
-                                />
-                                <Text
-                                  style={{
-                                    color: COLORS.grey,
-                                    fontFamily: 'Roboto-Medium',
-                                    fontSize: 10,
-                                    marginLeft: 5,
-                                  }}>
-                                  {item.likes}
-                                </Text>
-                              </View>
-                              <View
-                                style={{
-                                  flexDirection: 'row',
-                                  alignItems: 'center',
-                                }}>
-                                <AntDesign
-                                  name="eyeo"
-                                  color={COLORS.grey}
-                                  size={14}
-                                />
-                                <Text
-                                  style={{
-                                    color: COLORS.grey,
-                                    fontFamily: 'Roboto-Medium',
-                                    fontSize: 10,
-                                    marginLeft: 5,
-                                  }}>
-                                  {item.readByUsers}
-                                </Text>
-                              </View>
-                              <View
-                                style={{
-                                  flexDirection: 'row',
-                                  alignItems: 'center',
-                                }}>
-                                <MaterialCommunityIcons
-                                  name="clock-time-eight-outline"
-                                  color={COLORS.grey}
-                                  size={14}
-                                />
-                                <Text
-                                  style={{
-                                    color: COLORS.grey,
-                                    fontFamily: 'Roboto-Medium',
-                                    fontSize: 10,
-                                    marginLeft: 5,
-                                  }}>
-                                  {moment(item.date).format('DD MMMM YYYY')}
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-
-                          <TouchableOpacity>
-                            <AntDesign
-                              name="right"
-                              color={COLORS.heading}
-                              size={14}
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  }}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginTop: 10,
+                }}>
+                <Image
+                  source={{uri: item.writer.writerProfileImage}}
+                  resizeMode="cover"
+                  style={{width: 60, height: 60, borderRadius: 100}}
+                  borderRadius={100}
                 />
+                <View style={{}}>
+                  <Text
+                    style={{
+                      color: COLORS.heading,
+                      fontSize: 16,
+                      fontFamily: 'Roboto-Regular',
+                      bottom: 10,
+                      left: 10,
+                      marginTop:10
+                    }}>
+                    {item.writer.fullName}
+                  </Text>
+                  <Text
+                    style={{
+                      color: COLORS.greenText,
+                      fontSize: 14,
+                      fontFamily: 'Roboto-Regular',
+                      bottom: 6,
+                      left: 10,
+                    }}>
+                    Followers : {item.writer.followers}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>

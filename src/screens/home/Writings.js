@@ -7,13 +7,14 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {COLORS} from '../../services/colors';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Fontisto from 'react-native-vector-icons/Fontisto';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {Published} from '../../services/published';
 import {useNavigation} from '@react-navigation/native';
+import axios from 'axios';
+import {BASE_URL} from '../../services/baseUrls';
 
 const writings = [
   {
@@ -50,49 +51,68 @@ const writings = [
 
 const Writings = () => {
   const navigation = useNavigation();
+  const [Published, setPublished] = useState([]);
+
+  useEffect(() => {
+    writings();
+  }, []);
+
+  const writings = async () => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/v1/books/getbooks/${'6829c298feef054ab1e23837'}`,
+        {
+          withCredentials: true,
+        },
+      );
+      if (response.data.success) {
+        console.log('data', response.data.books);
+        setPublished(response.data.books);
+      } else {
+        console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log(
+        'Error in login',
+        error.response?.data?.message || error.message,
+      );
+    }
+  };
+
+  const readBook = item => {
+    read(item._id, item);
+  };
+
+  const read = async (id, item) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/v1/books/get-decrypted-book/${id}`,
+        {
+          withCredentials: true,
+        },
+      );
+      if (response.data.success) {
+        console.log('data', response.data.content);
+        navigation.navigate('Read', {
+          item: response.data.content, // decrypted content
+          name: item.title, // book title
+          bookData: item, // original book info
+        });
+      } else {
+        console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log(
+        'Error in login',
+        error.response?.data?.message || error.message,
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
       <ScrollView>
         <Text style={styles.headerText}>My Writings</Text>
-
-        <FlatList
-          data={writings}
-          keyExtractor={item => item.id.toString()}
-          renderItem={({item}) => (
-            <View style={styles.sectionContainer}>
-              <Text style={[styles.sectionTitle, {marginLeft: 15}]}>
-                {item.category}
-              </Text>
-              {item.books.map(book => (
-                <View key={book.id} style={styles.bookContainer}>
-                  <Image source={book.cover} style={styles.bookImage} />
-                  <View style={[styles.bookInfo]}>
-                    <Text style={styles.bookTitle}>{book.name}</Text>
-                    <Text style={styles.bookParts}>
-                      {book.part - 1} parts completed
-                    </Text>
-                    <Text
-                      style={{
-                        color: 'rgba(98, 99, 109, 1)',
-                        fontSize: 12,
-                        fontFamily: 'Roboto-Regular',
-                        left: 5,
-                        top: 3,
-                      }}>
-                      {`Shaping the next chapter: ${
-                        book.part ? book.part : '...'
-                      }`}
-                    </Text>
-                  </View>
-                  <View style={{position: 'absolute', top: 15, right: 10}}>
-                    <Text style={styles.buttonText}>Continue in web</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-        />
 
         {/* Published Books Section */}
         <View style={{marginLeft: 15, marginVertical: 10}}>
@@ -104,11 +124,11 @@ const Writings = () => {
           renderItem={({item}) => (
             <TouchableOpacity
               style={styles.bookContainer}
-              onPress={() => navigation.navigate('BookInfo', {item})}>
-              <Image source={item.image} style={styles.bookImage} />
+              onPress={() => readBook(item)}>
+              <Image source={{uri: item.coverImage}} style={styles.bookImage} />
               <View style={styles.bookInfo}>
                 <Text style={styles.bookTitle}>{item.title}</Text>
-                <Text style={styles.bookParts}>{item.parts} parts</Text>
+                <Text style={styles.bookParts}>{item.category}</Text>
                 <View style={styles.statsContainer}>
                   <View style={styles.statsItem}>
                     <AntDesign

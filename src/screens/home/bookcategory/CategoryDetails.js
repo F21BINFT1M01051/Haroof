@@ -7,154 +7,48 @@ import {
   Dimensions,
   TouchableOpacity,
 } from 'react-native';
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {COLORS} from '../../../services/colors';
 const {width} = Dimensions.get('window');
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {useNavigation} from '@react-navigation/native';
 import {Category} from '../../../services/categories';
-
-const books = [
-  {
-    id: 1,
-    title: 'Pride and Prejudice',
-    categoryId: 1,
-    img: require('../../../assets/images/Home/book20.jpg'),
-  },
-  {
-    id: 2,
-    title: 'Crime and Punishment',
-    categoryId: 1,
-    img: require('../../../assets/images/Home/book21.jpg'),
-  },
-  {
-    id: 3,
-    title: 'The Republic',
-    categoryId: 2,
-    img: require('../../../assets/images/Home/book22.jpg'),
-  },
-  {
-    id: 4,
-    title: 'Meditations',
-    categoryId: 2,
-    img: require('../../../assets/images/Home/book23.jpg'),
-  },
-  {
-    id: 5,
-    title: 'A Brief History of Time',
-    categoryId: 3,
-    img: require('../../../assets/images/Home/book19.jpg'),
-  },
-  {
-    id: 6,
-    title: 'The Selfish Gene',
-    categoryId: 3,
-    img: require('../../../assets/images/Home/book18.jpg'),
-  },
-  {
-    id: 7,
-    title: 'The Bible',
-    categoryId: 4,
-    img: require('../../../assets/images/Home/book17.jpg'),
-  },
-  {
-    id: 8,
-    title: 'The Quran',
-    categoryId: 4,
-    img: require('../../../assets/images/Home/book16.jpg'),
-  },
-  {
-    id: 9,
-    title: 'Pride and Prejudice',
-    categoryId: 5,
-    img: require('../../../assets/images/Home/book15.jpg'),
-  },
-  {
-    id: 10,
-    title: 'Romeo and Juliet',
-    categoryId: 5,
-    img: require('../../../assets/images/Home/book14.jpg'),
-  },
-  {
-    id: 11,
-    title: 'Pride and Prejudice',
-    categoryId: 6,
-    img: require('../../../assets/images/Home/book20.jpg'),
-  },
-  {
-    id: 12,
-    title: 'Crime and Punishment',
-    categoryId: 6,
-    img: require('../../../assets/images/Home/book21.jpg'),
-  },
-  {
-    id: 13,
-    title: 'The Republic',
-    categoryId: 7,
-    img: require('../../../assets/images/Home/book22.jpg'),
-  },
-  {
-    id: 14,
-    title: 'Meditations',
-    categoryId: 7,
-    img: require('../../../assets/images/Home/book23.jpg'),
-  },
-  {
-    id: 15,
-    title: 'Pride and Prejudice',
-    categoryId: 8,
-    img: require('../../../assets/images/Home/book20.jpg'),
-  },
-  {
-    id: 16,
-    title: 'Crime and Punishment',
-    categoryId: 8,
-    img: require('../../../assets/images/Home/book21.jpg'),
-  },
-  {
-    id: 17,
-    title: 'The Republic',
-    categoryId: 9,
-    img: require('../../../assets/images/Home/book22.jpg'),
-  },
-  {
-    id: 18,
-    title: 'Meditations',
-    categoryId: 9,
-    img: require('../../../assets/images/Home/book23.jpg'),
-  },
-  {
-    id: 19,
-    title: 'Pride and Prejudice',
-    categoryId: 10,
-    img: require('../../../assets/images/Home/book20.jpg'),
-  },
-  {
-    id: 20,
-    title: 'Crime and Punishment',
-    categoryId: 10,
-    img: require('../../../assets/images/Home/book21.jpg'),
-  },
-  {
-    id: 21,
-    title: 'The Republic',
-    categoryId: 11,
-    img: require('../../../assets/images/Home/book22.jpg'),
-  },
-  {
-    id: 22,
-    title: 'Meditations',
-    categoryId: 11,
-    img: require('../../../assets/images/Home/book23.jpg'),
-  },
-];
+import axios from 'axios';
+import {BASE_URL} from '../../../services/baseUrls';
 
 const CategoryDetailScreen = ({route}) => {
   const {category} = route.params;
-  const filteredBooks = Category.filter(
-    book => book.categoryId === category.id,
+    const [bookData, setbookData] = useState([]);
+  
+
+  useEffect(() => {
+    books();
+  }, []);
+
+  const books = async data => {
+    try {
+      const response = await axios.get(`${BASE_URL}/v1/books/getallbooks`, {
+        withCredentials: true,
+      });
+      // console.log('response...........', response);
+      if (response.data.success) {
+        console.log('data', response.data.books);
+        setbookData(response.data.books);
+      } else {
+        console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log('Error in login', error.response.data.message);
+      setError(error.response.data.message);
+    }
+  };
+
+  const filteredBooks = bookData.filter(
+    book => book.category === category
   );
   const navigation = useNavigation();
+
+  console.log(filteredBooks)
 
   return (
     <View style={styles.container}>
@@ -193,13 +87,13 @@ const CategoryDetailScreen = ({route}) => {
           <>
             <FlatList
               data={filteredBooks}
-              keyExtractor={item => item._id.oid}
+              keyExtractor={item => item._id}
               numColumns={2}
               renderItem={({item}) => (
                 <TouchableOpacity
                   style={styles.bookCard}
                   onPress={() => navigation.navigate('BookInfo', {item})}>
-                  <Image source={item.image} style={styles.bookImage} />
+                  <Image source={{uri : item.coverImage}} style={styles.bookImage} />
                   <Text style={styles.bookTitle}>{item.title}</Text>
                 </TouchableOpacity>
               )}
@@ -223,6 +117,7 @@ const styles = StyleSheet.create({
   },
   bookCard: {
     marginHorizontal: 15,
+    marginVertical:10
   },
   bookImage: {
     width: width * 0.35,

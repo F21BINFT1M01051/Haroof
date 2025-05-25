@@ -9,19 +9,20 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 // import ProgressBar from '../../../customcompoents/newComponents/ProgressBar';
 import VerificationCodeField from '../../../customcompoents/newComponents/VerificationCodeField';
 import Button from '../../../customcompoents/newComponents/Button';
-import { COLORS } from '../../../services/colors';
+import {COLORS} from '../../../services/colors';
 // import CustomAlert from '../../../customcompoents/newComponents/CustomAlert';
 // import { useSelector, useDispatch } from 'react-redux';
 // import { apiRequest } from '../../../../services/apiServices';
 import Toast from 'react-native-toast-message';
 // import { saveAuthToken } from '../../../../services/authToken';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
+import axios from 'axios';
 // import { setAuthToken } from '../../../../redux/AuthFlow/AuthActions';
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 // import firestore from '@react-native-firebase/firestore';
 // import { useTranslation } from 'react-i18next';
 
@@ -39,6 +40,7 @@ const OnBoardingTwentyFour = props => {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [codeText, setCodeText] = useState('');
+  const base_url = 'http://192.168.249.193:3000';
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -64,6 +66,11 @@ const OnBoardingTwentyFour = props => {
     setError(false);
   }, []);
 
+
+
+  
+
+
   const handleNext = () => {
     if (code.length === 4) {
       setLoading(true);
@@ -72,7 +79,8 @@ const OnBoardingTwentyFour = props => {
         setLoading(false);
       }, 1000);
 
-      navigation.navigate('OnBoardingTwentyFive')
+      
+      navigation.navigate('OnBoardingTwentyFive');
       // const data = {
       //   purpose: 'signup',
       //   otp: code,
@@ -100,7 +108,6 @@ const OnBoardingTwentyFour = props => {
       //   countryCode: '+92'
       // };
       // userRegistration(newData);
-
     } else {
       setError(true);
     }
@@ -121,7 +128,6 @@ const OnBoardingTwentyFour = props => {
   //         email: response?.data?.data?.userID?.email,
   //         uid: response?.data?.data?.userID?._id
   //       })
-
 
   //       Toast.show({
   //         type: 'success',
@@ -146,9 +152,6 @@ const OnBoardingTwentyFour = props => {
   //     });
   //   }
   // };
-
-
-
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -211,9 +214,8 @@ const OnBoardingTwentyFour = props => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{flex: 1}}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0} // Adjust this value based on your layout needs
       >
@@ -228,7 +230,7 @@ const OnBoardingTwentyFour = props => {
             paddingHorizontal: Platform.OS === 'ios' ? 20 : 0,
           }}>
           <View style={styles.container}>
-            <View style={{ marginTop: height * 0.04, alignItems: 'center' }}>
+            <View style={{marginTop: height * 0.04, alignItems: 'center'}}>
               <Text
                 style={{
                   fontSize: 22,
@@ -280,9 +282,9 @@ const OnBoardingTwentyFour = props => {
                 }}
               />
             </View>
-            <View style={{ alignItems: 'center', marginTop: height * 0.015 }}>
+            <View style={{alignItems: 'center', marginTop: height * 0.015}}>
               {isResendEnabled ? (
-                <TouchableOpacity 
+                <TouchableOpacity
                 // onPress={handleResendCode}
                 >
                   <Text
@@ -306,7 +308,7 @@ const OnBoardingTwentyFour = props => {
                     color: '#808D9E',
                   }}>
                   Resend Code in :
-                  <Text style={{ color: 'white' }}>
+                  <Text style={{color: 'white'}}>
                     0{minutes}:{seconds < 10 ? `0${seconds}` : seconds}{' '}
                   </Text>
                 </Text>
@@ -326,7 +328,7 @@ const OnBoardingTwentyFour = props => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={{ alignItems: 'center', marginBottom: 150 }}>
+      <View style={{alignItems: 'center', marginBottom: 150}}>
         <Button
           loading={loading}
           title={`Verify`}
@@ -334,7 +336,7 @@ const OnBoardingTwentyFour = props => {
             backgroundColor: code ? COLORS.greenText : 'rgba(0, 95, 73, 0.3)',
           }}
           press={handleNext}
-          textStyle={{ color: code ? COLORS.heading : 'rgba(128, 141, 158, 1)' }}
+          textStyle={{color: code ? COLORS.heading : 'rgba(128, 141, 158, 1)'}}
         />
       </View>
     </SafeAreaView>

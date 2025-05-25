@@ -19,11 +19,15 @@ import ImagePicker from 'react-native-image-crop-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import axios from 'axios';
+import {BASE_URL} from '../../services/baseUrls';
+import {useSelector} from 'react-redux';
 
 const Profile = () => {
   const navigation = useNavigation();
   const [image, setImage] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [profileImg, setProfileImg] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -53,7 +57,7 @@ const Profile = () => {
         if (selectedImage.path) {
           setImage({uri: selectedImage.path});
           const data = new FormData();
-          data.append('image', {
+          data.append('profileImage', {
             name: 'Profile_Image.png',
             type: selectedImage.mime,
             uri:
@@ -61,20 +65,58 @@ const Profile = () => {
                 ? selectedImage.path.replace('file://', '')
                 : selectedImage.path,
           });
-          updateImage(data);
+          updateProfile(data);
         }
       })
       .catch(error => {});
   };
 
-  const logOut = async () => {
+  const updateProfile = async data => {
     try {
-      await AsyncStorage.multiRemove(['email', 'password']);
-      await AsyncStorage.setItem('logout', 'yes');
-      navigation.navigate('SignIn');
+      const response = await axios.put(
+        `${BASE_URL}/v1/auth/update-profileImage`,
+        data,
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+      if (response.data.success) {
+        setProfileImg(response.data.user.profileImage);
+        console.log('data', response.data);
+      } else {
+        console.log(response.data.message);
+      }
     } catch (error) {
     } finally {
     }
+  };
+
+  const user = useSelector(state => state.form.user);
+
+  const logOut = async () => {
+    navigation.navigate('SignIn');
+    await AsyncStorage.removeItem('user');
+    // try {
+    //   const response = await axios.post(
+    //     `${BASE_URL}/v1/auth/logout`,
+    //     {},
+    //     {
+    //       withCredentials: true,
+    //     },
+    //   );
+    //   if (response.data.success) {
+    //     console.log('data', response.data);
+    //     navigation.navigate('SignIn');
+    //     await AsyncStorage.removeItem('user');
+    //   } else {
+    //     console.log(response.data.message);
+    //   }
+    // } catch (error) {
+    // } finally {
+    // }
   };
 
   return (
@@ -100,8 +142,8 @@ const Profile = () => {
           <View style={{marginTop: 30}}>
             <Image
               source={
-                image
-                  ? {uri: image.path}
+                user.profileImage
+                  ? {uri: user.profileImage}
                   : require('../../assets/images/Home/Tutor.png')
               }
               resizeMode="cover"

@@ -18,36 +18,49 @@ import {data} from '../../services/books';
 import {Old} from '../../services/oldBooks';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import {useSelector} from 'react-redux';
+import axios from 'axios';
+import {BASE_URL} from '../../services/baseUrls';
+import {booksData} from '../redux/Actions';
 
 const {width} = Dimensions.get('window');
 
 const HomeBasic = () => {
+  // const {user} = route.params
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
-  const [userData, setUserData] = useState(null);
+  const [bookData, setbookData] = useState([]);
+
+  const user = useSelector(state => state.form.user);
+  const Books = useSelector(state => state.form.books);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        const userDoc = await firestore()
-          .collection('Users')
-          .doc(currentUser.uid)
-          .get();
-        const userData = userDoc.data();
-        setUserData(userData);
-      }
-    };
-    fetchUserData();
+    books();
   }, []);
 
+  const books = async data => {
+    try {
+      const response = await axios.get(`${BASE_URL}/v1/books/getallbooks`, {
+        withCredentials: true,
+      });
+      // console.log('response...........', response);
+      if (response.data.success) {
+        console.log('data', response.data.books);
+        setbookData(response.data.books);
+        dispatch(booksData(response.data.books));
+      } else {
+        console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log('Error in login', error.response.data.message);
+      setError(error.response.data.message);
+    }
+  };
 
-  const filteredData = data.filter(item =>
-    item.title.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const filteredOld = Old.filter(item =>
-    item.title.toLowerCase().includes(search.toLowerCase()),
+  const filteredData = bookData.filter(
+    item =>
+      item.title.toLowerCase().includes(search.toLowerCase()) ||
+      item.writer.fullName.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -58,9 +71,9 @@ const HomeBasic = () => {
         <View style={{paddingHorizontal: width * 0.05}}>
           <ProfileSection
             notifications={true}
-            // img={profileInfo?.profileData?.profileImage}
+            img={user?.profileImage}
             image={require('../../assets/images/Home/Tutor.png')}
-            name={userData?.name}
+            name={user?.fullName}
             textColor={{color: 'white'}}
           />
           <View style={styles.searchBar}>
@@ -101,7 +114,7 @@ const HomeBasic = () => {
         </View>
 
         <View style={{marginTop: 15}}>
-          {filteredData.length === 0 ? (
+          {bookData.length === 0 ? (
             <>
               <Text
                 style={{
@@ -116,8 +129,8 @@ const HomeBasic = () => {
           ) : (
             <>
               <FlatList
-                data={search ? filteredData : data}
-                keyExtractor={item => item._id.oid}
+                data={search ? filteredData : bookData}
+                keyExtractor={item => item._id}
                 horizontal
                 renderItem={({item}) => {
                   return (
@@ -125,7 +138,7 @@ const HomeBasic = () => {
                       <TutorCard
                         img={item.coverImage}
                         name={item.title}
-                        text2={item.author}
+                        text2={item.writer.fullName}
                         rating={item.readByUsers}
                         view={true}
                         onPress={() => navigation.navigate('BookInfo', {item})}
@@ -154,13 +167,13 @@ const HomeBasic = () => {
                 fontSize: 18,
                 fontFamily: 'Roboto-Medium',
               }}>
-              Recommended For You
+              Recently Uploaded Books
             </Text>
           </View>
         </View>
 
         <View style={{marginTop: 15}}>
-          {filteredOld.length === 0 ? (
+          {bookData.length === 0 ? (
             <>
               <Text
                 style={{
@@ -175,16 +188,16 @@ const HomeBasic = () => {
           ) : (
             <>
               <FlatList
-                data={search ? filteredOld : Old}
-                keyExtractor={item => item._id.oid}
+                data={search ? filteredData : bookData}
+                keyExtractor={item => item._id}
                 horizontal
                 renderItem={({item}) => {
                   return (
                     <View style={{marginHorizontal: 10}}>
                       <TutorCard
-                        image={item.image}
+                        img={item.coverImage}
                         name={item.title}
-                        text2={item.author}
+                        text2={item.writer.fullName}
                         rating={item.readByUsers}
                         view={true}
                         onPress={() => navigation.navigate('BookInfo', {item})}

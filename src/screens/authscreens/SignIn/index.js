@@ -20,37 +20,67 @@ import firestore from '@react-native-firebase/firestore';
 // import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-import { useNavigation } from '@react-navigation/native';
-
+import {useNavigation} from '@react-navigation/native';
+import axios from 'axios';
+import {BASE_URL} from '../../../services/baseUrls';
+import { useDispatch } from 'react-redux';
+import { userData } from '../../redux/Actions';
 const {width, height} = Dimensions.get('window');
 
 export default function SignIn(props) {
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation()
-
+  const [error, setError] = useState(null);
+  const navigation = useNavigation();
+  const dispatch = useDispatch()
+  
   let validationSchema = yup.object({
     email: yup.string().email('Invalid email').required('Email is required'),
     password: yup.string().required('Password is required'),
   });
 
-
   const handleSignIn = async values => {
-    setLoading(true);
-    try {
-      const userCredential = await auth().signInWithEmailAndPassword(
-        values.email,
-        values.password,
-      );
-      navigation.navigate('HomeBasic');
-      await AsyncStorage.setItem('email', values.email);
-      await AsyncStorage.setItem('password', values.password);
-      await AsyncStorage.setItem('logout', 'no');
-    } catch (error) {
-    } finally {
-      setLoading(false);
-    }
+    const payload = {
+      email: values.email,
+      password: values.password,
+    };
+
+    userLogin(payload);
+
+    // setLoading(true);
+    // try {
+    //   const userCredential = await auth().signInWithEmailAndPassword(
+    //     values.email,
+    //     values.password,
+    //   );
+    //   navigation.navigate('HomeBasic');
+    //   await AsyncStorage.setItem('email', values.email);
+    //   await AsyncStorage.setItem('password', values.password);
+    //   await AsyncStorage.setItem('logout', 'no');
+    // } catch (error) {
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
+  const userLogin = async data => {
+    try {
+      const response = await axios.post(`${BASE_URL}/v1/auth/login`, data, {
+        withCredentials: true,
+      });
+      // console.log('response...........', response);
+      if (response.data.success) {
+        console.log('data', response.data.user);
+        navigation.navigate('HomeBasic', {user: response.data.user});
+        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+        dispatch(userData( response.data.user))
+      } else {
+        console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log('Error in login', error.response.data.message);
+      setError(error.response.data.message);
+    }
+  };
 
   return (
     <SafeAreaView

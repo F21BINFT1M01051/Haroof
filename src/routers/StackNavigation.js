@@ -36,20 +36,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const Stack = createStackNavigator();
 
 const StackNavigation = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [loggedOut, setLoggedOut] = useState('');
 
   useEffect(() => {
     const fetchCredentialsAndUserData = async () => {
       try {
-        const storedEmail = await AsyncStorage.getItem('email');
-        const storedPassword = await AsyncStorage.getItem('password');
-        const logOut = await AsyncStorage.getItem('logout');
-        setEmail(storedEmail);
-        setPassword(storedPassword);
-        setLoggedOut(logOut);
+        const storedUser = await AsyncStorage.getItem('user');
+        setUser(storedUser);
       } catch (error) {
         console.error('Error fetching credentials or user data:', error);
       } finally {
@@ -66,7 +60,7 @@ const StackNavigation = () => {
         <SplashOne />
       ) : (
         <Stack.Navigator
-          initialRouteName={email && password ? 'HomeBasic' : 'SplashOne'}
+          initialRouteName={user ? 'HomeBasic' : 'SplashOne'}
           screenOptions={{
             cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
             cardStyle: {backgroundColor: 'transparent'},
